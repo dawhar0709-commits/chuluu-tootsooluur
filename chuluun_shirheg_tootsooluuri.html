@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Чулууны ширхэг тооцоолуур</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f4f5f7;color:#202124}
+.container{max-width:900px;margin:auto;padding:20px}
+h1{margin:0 0 6px;font-size:28px}
+.sub{color:#666;margin-bottom:20px}
+.card{background:white;border-radius:14px;padding:18px;margin-bottom:16px;box-shadow:0 2px 10px #00000012}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+label{font-size:13px;color:#555;display:block;margin-bottom:5px}
+input{width:100%;padding:11px;border:1px solid #ccc;border-radius:8px;font-size:16px}
+button{border:0;border-radius:9px;padding:11px 15px;font-size:15px;cursor:pointer}
+.add{background:#222;color:white;margin-top:12px}
+.delete{background:#eee;color:#b00020}
+.row{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr auto;gap:8px;align-items:end;padding:12px 0;border-bottom:1px solid #eee}
+.result{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.box{background:#f7f7f7;border-radius:10px;padding:14px}
+.big{font-size:25px;font-weight:bold;margin-top:5px}
+.highlight{background:#e9f7ee}
+.highlight .big{color:#147a3d}
+.note{font-size:13px;color:#666;margin-top:10px;line-height:1.5}
+@media(max-width:650px){
+ .grid,.result{grid-template-columns:1fr 1fr}
+ .row{grid-template-columns:1fr 1fr}
+ .row .name{grid-column:1/-1}
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🪨 Чулууны ширхэг тооцоолуур</h1>
+  <div class="sub">Хэмжээ (см/мм) + ширхэг оруулаад хэдэн 1.80 × 1.35 м чулуу хэрэгтэйг тооцно.</div>
+
+  <div class="card">
+    <h3>Үндсэн чулууны хэмжээ</h3>
+    <div class="grid">
+      <div><label>Урт (м)</label><input id="slabL" type="number" step="0.01" value="1.80"></div>
+      <div><label>Өргөн (м)</label><input id="slabW" type="number" step="0.01" value="1.35"></div>
+      <div><label>Хаягдал (%)</label><input id="waste" type="number" step="1" value="10"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Хийх хэсгүүд</h3>
+    <div id="rows"></div>
+    <button class="add" onclick="addRow()">＋ Хэмжээ нэмэх</button>
+    <div class="note">Жишээ: 130 × 110 см, 4 ширхэг. Олон өөр хэмжээ байвал тус бүрийг тусдаа мөрөөр оруулна.</div>
+  </div>
+
+  <div class="card">
+    <h3>Тооцооны дүн</h3>
+    <div class="result">
+      <div class="box"><div>Нийт шаардлагатай талбай</div><div class="big" id="area">0.00 м²</div></div>
+      <div class="box"><div>Хаягдалтай талбай</div><div class="big" id="wasteArea">0.00 м²</div></div>
+      <div class="box highlight"><div>Хэрэгтэй чулуу</div><div class="big" id="slabs">0 ширхэг</div></div>
+    </div>
+    <div class="note" id="formula"></div>
+  </div>
+</div>
+
+<script>
+const rows=document.getElementById('rows');
+
+function addRow(name='',l='',w='',q='1'){
+ const div=document.createElement('div');
+ div.className='row';
+ div.innerHTML=`
+  <div class="name"><label>Нэр / хэсэг</label><input class="nameInput" placeholder="Цонхны тавцан" value="${name}"></div>
+  <div><label>Урт (см)</label><input class="len" type="number" step="0.1" value="${l}" oninput="calc()"></div>
+  <div><label>Өргөн (см)</label><input class="wid" type="number" step="0.1" value="${w}" oninput="calc()"></div>
+  <div><label>Ширхэг</label><input class="qty" type="number" min="1" step="1" value="${q}" oninput="calc()"></div>
+  <button class="delete" onclick="this.parentElement.remove();calc()">Устгах</button>`;
+ rows.appendChild(div);
+ calc();
+}
+
+function calc(){
+ let total=0;
+ document.querySelectorAll('.row').forEach(r=>{
+   const l=Number(r.querySelector('.len').value)||0;
+   const w=Number(r.querySelector('.wid').value)||0;
+   const q=Number(r.querySelector('.qty').value)||0;
+   total += (l*w/10000)*q;
+ });
+ const waste=(Number(document.getElementById('waste').value)||0)/100;
+ const slabL=Number(document.getElementById('slabL').value)||0;
+ const slabW=Number(document.getElementById('slabW').value)||0;
+ const slabArea=slabL*slabW;
+ const withWaste=total*(1+waste);
+ const count=slabArea>0 ? Math.ceil(withWaste/slabArea) : 0;
+ document.getElementById('area').textContent=total.toFixed(2)+' м²';
+ document.getElementById('wasteArea').textContent=withWaste.toFixed(2)+' м²';
+ document.getElementById('slabs').textContent=count+' ширхэг';
+ document.getElementById('formula').textContent=slabArea>0
+  ? `1 чулуу = ${slabL.toFixed(2)} × ${slabW.toFixed(2)} = ${slabArea.toFixed(2)} м². Хаягдал ${waste*100}% оруулж, дээш нь бүхэлдүүлж тооцсон.`
+  : '';
+}
+document.getElementById('slabL').oninput=calc;
+document.getElementById('slabW').oninput=calc;
+document.getElementById('waste').oninput=calc;
+
+// Example rows based on the type of measurements shown in the user's photo.
+addRow('Жишээ 1','130','110','1');
+addRow('Жишээ 2','130','93','1');
+addRow('Жишээ 3','120','98','1');
+addRow('Жишээ 4','108','125','1');
+addRow('Жишээ 5','123','47','2');
+</script>
+</body>
+</html>
